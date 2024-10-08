@@ -1,0 +1,159 @@
+.data
+
+msgMenu:         .asciiz "Escolha uma opcao:\n"
+msgMenu1:        .asciiz "1 - Criar item\n"
+msgMenu2:        .asciiz "2 - Comprar estoque\n"
+msgMenu3:        .asciiz "3 - Vender estoque\n"
+msgMenu4:        .asciiz "4 - Sair\n"
+
+msgNew:          .asciiz "Digite o ID do item novo:\n"
+msgErrorNew:     .asciiz "ID ja esta em uso.\n"
+msgBuy:          .asciiz "Digite o ID do item a ser comprado:\n"
+msgBuyQnt:       .asciiz "Digite a quantidade do item a ser comprado:\n"
+msgSell:         .asciiz "Digite o ID do item a ser vendido:\n"
+msgSellQnt:      .asciiz "1 - Criar item\n"
+msgItemError:    .asciiz "ID de item invalido.\n"
+msgNoStock:      .asciiz "Estoque insuficiente.\n"
+
+msgStock1:       .asciiz "Estoque:\nItem "
+msgStock2:       .asciiz ": "
+msgN:		 .asciiz "\n\n"
+    .align 2
+    
+ID :	.space 20
+stock:	.space 20
+
+.text
+.globl main
+
+main:
+    la $t5, ID
+    la $t6, stock
+    li $t8, 0
+
+    loopMain:
+    jal printMenu
+
+    li $v0, 5
+    syscall
+    move $t2, $v0
+
+    beq $t2, 1, Case1
+    beq $t2, 2, Case2
+    beq $t2, 3, Case3
+    beq $t2, 4, Exit
+
+    endCase:
+    
+    jal printStock
+
+    j loopMain
+    
+    Exit:
+
+    li $v0, 10    # code for program end
+    syscall
+
+##########
+    Case1:
+    la $a0, msgNew
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    
+    move $t0, $v0
+    
+    li $t8, 0
+    
+    loopCheckID:    #check if have repeated
+    lw $t3, ($t5)
+    
+    beq $t3, $zero, endLoopCheckID  #nao existe id=0, logo chegou no maximo
+
+    beq $t3, $t0, sameID
+
+    add $t5, $t5, 4
+    add $t8, $t8, 1
+
+    j loopCheckID
+    ###
+    sameID:
+    la $a0, msgErrorNew
+    li $v0, 4
+    syscall
+    
+    j Reductor
+    
+    endLoopCheckID:
+    add $t5, $t5, 4
+    add $t8, $t8, 1
+    sw $t0, ($t5)
+
+    j Reductor
+##########
+    Case2:
+    la $a0, msgBuy
+    li $v0, 4
+    syscall
+
+    j endCase
+##########
+    Case3:
+    la $a0, msgSell
+    li $v0, 4
+    syscall
+
+    j endCase
+##########
+    Reductor:
+    beq $t8, $zero, endCase     #quando t8 = 0 vai para
+    
+    sub $t5, $t5, 4
+    sub $t8, $t8, 1
+    
+    j Reductor
+##########
+
+printMenu:
+    la $a0, msgMenu
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu1
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu2
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu3
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu4
+    li $v0, 4
+    syscall
+
+    jr $ra
+    
+printStock:
+    la $a0, msgStock1
+    li $v0, 4
+    syscall
+    
+    #item id
+    
+    la $a0, msgStock2
+    li $v0, 4
+    syscall
+
+    #quantidade no estoque do id
+
+    la $a0, msgN
+    li $v0, 4
+    syscall
+
+    jr $ra

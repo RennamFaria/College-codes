@@ -1,0 +1,10 @@
+quando vai imprimir o vetor o t8 sai como 4
+
+t8 < 4?
+1        2        3         5         nulo      
+0 checa  4 checa  8 checa  12 checa  16
+0 checa  1 checa  2 checa  3 checa  4
+    v	     v 	       v         v	f       
+
+4 checa 3 checa 2 checa 1 checa 0 checa falso
+	12      8       4       0

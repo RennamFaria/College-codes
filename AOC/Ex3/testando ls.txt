@@ -1,0 +1,67 @@
+.data
+
+
+str1: 	.asciiz "Enter a number: \n"
+
+str2:   .asciiz "The sum of the numbers is: "
+    .align 2
+    
+list :	.space 4
+
+.text
+
+
+.globl main
+
+
+main:
+    la 	$t5, list	
+
+    la $a0, str1
+
+    jal print_sring
+
+    jal read_float
+    
+    #mfc1 $t6, $f0
+    #sw $t6, ($t5)
+    s.s $f0, ($t5)
+    
+#sbrk
+    la $a0, str2
+
+    jal print_sring
+
+    
+    l.s $f12, ($t5)
+    
+    #lw $t6, ($t5)
+    #mtc1 $t6, $f12
+    
+    
+    li $v0, 2
+
+	syscall
+
+
+	li $v0, 10
+
+	syscall
+
+
+print_sring: 
+
+ 	li $v0, 4
+
+	syscall
+
+	jr $ra
+
+
+read_float:
+
+    li $v0, 6
+
+    syscall
+
+    jr $ra

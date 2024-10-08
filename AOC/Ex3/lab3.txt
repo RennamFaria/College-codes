@@ -1,0 +1,190 @@
+.data
+
+msgQtd:     .asciiz "Entre com a quantidade de numeros do vetor:\n"
+msgOut1:    .asciiz "Entre com o numero "
+msgOut2:    .asciiz " do vetor:\n"
+msgVetL:    .asciiz "Vetor lido: "
+msgVetN:    .asciiz "\nVetor normalizado: "
+    .align 2
+    
+list :	.space 20
+
+.text
+.globl main
+
+main:
+    la $t5, list
+
+    la $a0, msgQtd
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $s0, $v0
+    
+    ######
+    #li $t2, 0   #time
+    li $t8, 0
+    
+    LoopInput:
+    beq $t8, $s0, Prox1     #quando t8 = s0 vai para
+    
+    la $a0, msgOut1
+    li $v0, 4
+    syscall
+
+    move $a0, $t8
+    li $v0, 1
+    syscall
+    
+    la $a0, msgOut2
+    li $v0, 4
+    syscall
+
+    li $v0, 6
+    syscall
+    
+    mfc1 $t6, $f0
+    sw $t6, ($t5)
+#0, 4, 8, 12
+    add $t5, $t5, 4
+    addi $t8, $t8, 1    #adiciona +1 no "for"
+    
+    j LoopInput
+    
+    ########################
+    Prox1:
+#12, 8, 4, 0
+    Reductor:
+    beq $t8, $zero, endRed     #quando t8 = 0 vai para
+    
+    sub $t5, $t5, 4
+    sub $t8, $t8, 1
+    
+    j Reductor
+    
+    endRed:
+    
+    #li $t5, 0   #time
+    li $t8, 0
+    
+    la $a0, msgVetL
+    li $v0, 4
+    syscall
+    
+    LoopInput2:
+    beq $t8, $s0, Prox2     #quando t8 = s0 vai para
+    
+    lw $t6, ($t5)
+    mtc1 $t6, $f12
+    
+    li $v0, 2
+    syscall
+    
+    li $v0, 11    # code for printing a space
+    li $a0, 32     # ASCII code for space
+    syscall
+
+    add $t5, $t5, 4
+    addi $t8, $t8, 1    #adiciona +1 no "for"
+    
+    j LoopInput2
+    #######################
+    Maior:
+    mov.s $f4, $f12
+    
+    j loopMN
+    ##
+    Menor:
+    mov.s $f5, $f12
+    
+    j loopMN
+    ########
+    Prox2:
+    #y = (x - m)/(M-m),
+    
+    li $t2, 0        #MAIOR
+    mtc1 $t2, $f4
+          #menor
+    li.s $f5, 100.0	#menor
+    
+    loopMN:
+    beq $t8, $zero, Prox3     #quando t8 = 0 vai para
+    sub $t8, $t8, 1
+    sub $t5, $t5, 4
+    
+    lw $t6, ($t5)
+    mtc1 $t6, $f12
+
+    c.lt.s $f4, $f12      #if(f12 < f4) f4 ainda é maior, verdade, t1 = 1 e nao att
+    bc1t Maior     #se falso, f12>f4 e (falso)t0 = 0, att t4, com novo maior
+    
+    c.lt.s $f12, $f5       #if(f5 < f12) f5 ainda é menor, verdade, t1 = 1 e nao att
+    bc1t Menor   #se falso, f5>f12 e (falso)t0 = 0, att t5 com novo menor
+
+    j loopMN
+    ######################
+    sub $t8, $t8, 1
+    sub $t5, $t5, 4
+    ######################
+    Prox3:
+    
+    la $a0, msgVetN
+    li $v0, 4
+    syscall
+    
+    loopEq:
+    beq $t8, $s0, Prox4     #quando t8 = s0 vai para
+
+    
+    lw $t6, ($t5)
+    mtc1 $t6, $f12
+    
+    sub.s $f2, $f12, $f5     #(x-m)
+    sub.s $f3, $f4, $f5      #(M-m)
+    div.s $f12, $f2, $f3    #(x-m)/(M-m)
+    
+    li $v0, 2
+    syscall
+    
+    li $v0, 11    # code for printing a space
+    li $a0, 32     # ASCII code for space
+    syscall
+
+    add $t8, $t8, 1
+    add $t5, $t5, 4
+    j loopEq
+
+    ###############################
+
+    Prox4:
+    
+    li $v0, 10    # code for program end
+    syscall
+   
+    
+printInt:
+    li $v0, 1
+    syscall
+    jr $ra
+    
+printFloat
+    li $v0, 2
+    syscall
+    jr $ra
+    
+printString: 
+    li $v0, 4
+    syscall
+    jr $ra
+
+getInt:
+    li $v0, 5
+    syscall
+    jr $ra
+
+getFloat:
+    li $v0, 6
+    syscall
+    jr $ra

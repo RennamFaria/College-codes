@@ -1,0 +1,276 @@
+.data
+
+msgMenu:         .asciiz "Escolha uma opcao:\n"
+msgMenu1:        .asciiz "1 - Criar item\n"
+msgMenu2:        .asciiz "2 - Comprar estoque\n"
+msgMenu3:        .asciiz "3 - Vender estoque\n"
+msgMenu4:        .asciiz "4 - Sair\n"
+
+msgNew:          .asciiz "Digite o ID do item novo:\n"
+msgErrorNew:     .asciiz "ID ja esta em uso.\n"
+msgBuy:          .asciiz "Digite o ID do item a ser comprado:\n"
+msgBuyQnt:       .asciiz "Digite a quantidade do item a ser comprado:\n"
+msgSell:         .asciiz "Digite o ID do item a ser vendido:\n"
+msgSellQnt:      .asciiz "Digite a quantidade do item a ser vendido:\n"
+msgItemError:    .asciiz "ID de item invalido.\n"
+msgNoStock:      .asciiz "Estoque insuficiente.\n"
+
+msgStock1:       .asciiz "Estoque:\n"
+msgStock2:       .asciiz "Item "
+msgStock3:       .asciiz ": "
+msgN:		 .asciiz "\n"
+    .align 2
+    
+ID :	.space 20
+stock:	.space 20
+
+.text
+.globl main
+
+main:
+    la $t5, ID
+    la $t6, stock
+    li $t8, 0
+
+    loopMain:
+    jal printMenu
+
+    li $v0, 5
+    syscall
+    move $t2, $v0
+
+    beq $t2, 1, Case1
+    beq $t2, 2, Case2
+    beq $t2, 3, Case3
+    beq $t2, 4, Exit
+
+    endCase:
+    
+    jal printStock
+
+    j loopMain
+    
+    Exit:
+
+    li $v0, 10    # code for program end
+    syscall
+
+##########
+    Case1:
+    la $a0, msgNew
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    
+    move $t0, $v0
+    
+    li $t8, 0
+    
+    loopCheckID1:    #check if have repeated
+    lw $t3, ($t5)
+    
+    beq $t3, $zero, endLoopCheckID1  #nao existe id=0, logo chegou no maximo
+
+    beq $t3, $t0, sameID
+
+    add $t5, $t5, 4
+    add $t8, $t8, 1
+
+    j loopCheckID1
+    ###
+    sameID:
+    la $a0, msgErrorNew
+    li $v0, 4
+    syscall
+    
+    j Reductor
+    
+    endLoopCheckID1:
+    add $t5, $t5, 4
+    add $t6, $t6, 4     #nao utilizamos mas usamos para ficar valido o Reductor
+    add $t8, $t8, 1
+    sw $t0, ($t5)
+    
+    sw 0, ($t6)
+
+    j Reductor
+##########
+    Case2:
+    la $a0, msgBuy
+    li $v0, 4
+    syscall
+
+    li $v0, 5
+    syscall
+    
+    move $t0, $v0
+    
+    li $t8, 0
+    
+    loopCheckID2:    #check if have repeated
+    lw $t3, ($t5)
+    
+    beq $t3, $zero, wrongID  #nao existe id=0, logo chegou no maximo
+
+    beq $t3, $t0, endLoopCheckID2
+
+    add $t5, $t5, 4
+    add $t6, $t6, 4
+    add $t8, $t8, 1
+
+    j loopCheckID2
+    ###
+    wrongID:
+    la $a0, msgItemError
+    li $v0, 4
+    syscall
+    
+    j Reductor
+    
+    endLoopCheckID2:
+    la $a0, msgBuyQnt
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $t0, $v0
+    
+    lw $t1, ($t6)
+    add $t1, $t1, $t0
+    
+    sw $t1, ($t6)
+
+    j Reductor
+##########
+    Case3:
+    la $a0, msgSell
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    
+    move $t0, $v0
+    
+    li $t8, 0
+    
+    loopCheckID3:    #check if have repeated
+    lw $t3, ($t5)
+    
+    beq $t3, $zero, wrongID  #nao existe id=0, logo chegou no maximo
+
+    beq $t3, $t0, endLoopCheckID3
+
+    add $t5, $t5, 4
+    add $t6, $t6, 4
+    add $t8, $t8, 1
+
+    j loopCheckID3
+    ###
+    
+    endLoopCheckID3:
+    la $a0, msgSellQnt
+    li $v0, 4
+    syscall
+    
+    li $v0, 5
+    syscall
+    move $t0, $v0
+    
+    lw $t1, ($t6)
+    sub $t1, $t1, $t0
+    
+    sw $t1, ($t6)
+
+    j endCase
+##########
+    Reductor:
+    beq $t8, $zero, endCase     #quando t8 = 0 vai para
+    
+    sub $t5, $t5, 4
+    sub $t6, $t6, 4
+    sub $t8, $t8, 1
+    
+    j Reductor
+##########
+
+printMenu:
+    la $a0, msgMenu
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu1
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu2
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu3
+    li $v0, 4
+    syscall
+
+    la $a0, msgMenu4
+    li $v0, 4
+    syscall
+
+    jr $ra
+    
+printStock:
+    la $a0, msgStock1
+    li $v0, 4
+    syscall
+    
+    li $t8, 0
+    loopStock:
+    lw $t0, ($t5)
+    beq $t0, $zero, ReductorStock
+    
+    la $a0, msgStock2
+    li $v0, 4
+    syscall
+    
+    move $a0, $t0
+    li $v0, 1
+    syscall
+    jr $ra
+    
+    la $a0, msgStock3
+    li $v0, 4
+    syscall
+
+    lw $a0, ($t6)
+    li $v0, 1
+    syscall
+    jr $ra
+
+    la $a0, msgN
+    li $v0, 4
+    syscall
+    
+    add $t5, $t5, 4
+    add $t6, $t6, 4
+    add $t8, $t8, 1
+    
+    j loopStock
+    
+    ReductorStock:
+    beq $t8, $zero, endLoopStock     #quando t8 = 0 vai para
+    
+    sub $t5, $t5, 4
+    sub $t6, $t6, 4
+    sub $t8, $t8, 1
+    
+    j ReductorStock
+    
+    endLoopStock:
+    
+    la $a0, msgN
+    li $v0, 4
+    syscall
+
+    jr $ra
