@@ -6,6 +6,39 @@ if (!gl) {
 }
 
 const mat4 = glMatrix.mat4;     //Use Object destructuring to get mat4
+//find somehow to spin with the mouse
+var rotationSpeed = 1.0;
+var rotationX = 0; // Rotation around X-axis
+var rotationY = 0; // Rotation around Y-axis
+
+canvas.addEventListener("mousemove", MouseMove, false);
+canvas.addEventListener("mousedown", MouseDown, false);
+canvas.addEventListener("mouseup", MouseUp, false);
+canvas.addEventListener("wheel", MouseWheel, false);
+
+function MouseMove (event){
+    if(isDragging){
+        
+    }
+}
+
+function MouseDown(event) {
+    if (event.button === 0) {
+        isDragging = true;
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+    }
+}
+
+function MouseUp(event) {
+    if (event.button === 0) {
+        isDragging = false; 
+    }
+}
+
+function MouseWheel (event){
+    rotationY += 0.00005 * event.deltaY;
+}
 
 const vertexData = [
 
@@ -132,31 +165,40 @@ const uniformLocations = {
     matrix: gl.getUniformLocation(program, `matrix`),
 };
 
-const matrix = mat4.create();
+const modelMatrix = mat4.create();
+const viewMatrix = mat4.create();
+const projectionMatrix = mat4.create();     //"camera"
 
-mat4.translate(matrix, matrix, [.0, .5, 0]);
+mat4.perspective(projectionMatrix,
+    75 * Math.PI/180,           //FOV (angle, radians)
+    canvas.width/canvas.height,  //aspect ratio
+    1e-4,       //near cull distance
+    1e4,        //far cull distance
+);
 
-mat4.scale(matrix, matrix, [0.25, 0.25, 0.25]);
+const mvMatrix = mat4.create();
+const mvpMatrix = mat4.create();
 
+mat4.translate(modelMatrix, modelMatrix, [-1.5, 0, -2]);
 
+mat4.translate(viewMatrix, viewMatrix, [-3, 0, 1]);
+mat4.invert(viewMatrix, viewMatrix);
 
-function updateAspect() {
-    const aspect = canvas.width / canvas.height;
-    mat4.perspective(projectionMatrix, fov, aspect, near, far);
-}
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    updateAspect();
-});
+mat4.scale(modelMatrix, modelMatrix, [1.5, 1.5, 1.5]);
 
 function animate() {
     requestAnimationFrame(animate);
-    mat4.rotateZ(matrix, matrix, Math.PI/2 / 100);
-    mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
-    gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
+
+    mat4.rotateX(modelMatrix, modelMatrix, rotationX); // Apply rotation around X-axis
+    mat4.rotateY(modelMatrix, modelMatrix, rotationY);
+
+    mat4.multiply(mvMatrix, viewMatrix, modelMatrix);
+    mat4.multiply(mvpMatrix, projectionMatrix, mvMatrix);
+
+    // mat4.rotateZ(modelMatrix, modelMatrix, (Math.PI/2 /100) * rotationSpeed);
+    // mat4.rotateX(modelMatrix, modelMatrix, (Math.PI/2 /150) * rotationSpeed);
+
+    gl.uniformMatrix4fv(uniformLocations.matrix, false, mvpMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
 }
 

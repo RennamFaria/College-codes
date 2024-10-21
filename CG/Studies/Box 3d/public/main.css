@@ -2,8 +2,15 @@ body {
     margin: 0;
 }
 
+.emote {
+    display: inline-block;
+    transform: scaleX(-1);
+}
+
 canvas {
-    border: 1px solid black;
-    width: 100%;
-    height: 100%;
+    border: 2px solid black;
+    background-color: dimgrey;
+    margin: 10px;
+    width: 80%;
+    height: 80%;
 }
