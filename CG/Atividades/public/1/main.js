@@ -6,40 +6,21 @@ function main(draw) {
         throw new Error('WebGL not supported');
     }
 
-    const vertexShaderSource = `
-    attribute vec2 position;
-    uniform mat4 matrix;
+    canvas.addEventListener("mousedown", mouseDown, false);
 
-    void main() {
-        gl_Position = matrix * vec4(position, 0.0, 1.0);
-        gl_PointSize = 5.0;         // the size of the point clicked
-    }
-    `;
-
-    const fragmentShaderSource =`
-    precision mediump float;
-
-    varying vec3 vColor;        
-
-    void main() {
-        gl_FragColor = vec4(vColor,1.0);
-    }
-    `;
-
-    canvas.addEventListener("mousedown", mouseClick, false);
-
-    function mouseClick(event) {
-        positionVector = [event.offsetX,event.offsetY];
-        gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionVector), gl.STATIC_DRAW);
-      //drawPoints();
+    function mouseDown(event) {
+        const x = event.offsetX;
+        const y = event.offsetY;
     
-        console.log("Normalized X:", x);
-        console.log("Normalized Y:", y);
+        const normalizedX = (x / canvas.width) * 2 - 1;
+        const normalizedY = -((y / canvas.height) * 2 - 1); // Flip Y for WebGL
+    
+        console.log("Normalized X:", normalizedX);
+        console.log("Normalized Y:", normalizedY);
     }
 
-    var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    var vertexShader = createVertexShader(gl);
+    var fragmentShader = createFragmentShader(gl);
     
     var program = createProgram(gl, vertexShader, fragmentShader);
 
@@ -53,28 +34,13 @@ function main(draw) {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
+    const colorLocation = gl.getAttribLocation(program, `color`);
+    gl.enableVertexAttribArray(colorLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
     gl.clearColor(0.0, 0.0, 0.0, 0.0); // Makes the WebGL background transparent
     gl.clear(gl.COLOR_BUFFER_BIT);
-
-    const matrixUniformLocation = gl.getUniformLocation(program, `matrix`);
-    const colorUniformLocation = gl.getUniformLocation(program, `vColor`);
-    
-    let matrix = [
-        2/canvas.width, 0, 0, 0,
-        0, -2/canvas.height, 0, 0,
-        0, 0, 0, 0,
-        -1, 1, 0, 1
-    ];
-    gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
-
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    let positionVector = [canvas.width/2,canvas.height/2];
-    gl.bindBuffer(gl.ARRAY_BUFFER,positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionVector), gl.STATIC_DRAW);
-    let colorVector = [0.0,0.0,0.0];
-    gl.uniform3fv(colorUniformLocation,colorVector);
 
     n = 30;
     const grey = normalizeRGB(33,33,33);
@@ -369,18 +335,49 @@ function main(draw) {
     }
 }
 
-function createShader(gl, type, source) {
-    var shader = gl.createShader(gl.FRAGMENT_SHADER); // create shader in specificy type
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+function createVertexShader(gl) {
+    var vertexShader = gl.createShader(gl.VERTEX_SHADER);     // create vertex shader
+    gl.shaderSource(vertexShader, `
+    attribute vec2 position;
+    attribute vec3 color;
+    varying vec3 vColor;
 
-    const sucess = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    void main() {
+        gl_Position = vec4(position,0.0,1.0);
+        vColor = color;
+    }
+    `);
+    gl.compileShader(vertexShader);
+
+    const sucess = gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS);
     if(sucess){
-        return shader;
+        return vertexShader;
     }
 
-    console.log(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
+    console.log(gl.getShaderInfoLog(vertexShader));
+    gl.deleteShader(vertexShader);
+}
+
+function createFragmentShader(gl) {
+    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER); // create fragment shader
+    gl.shaderSource(fragmentShader, `
+    precision mediump float;
+
+    varying vec3 vColor;        
+
+    void main() {
+        gl_FragColor = vec4(vColor,1.0);
+    }
+    `);
+    gl.compileShader(fragmentShader);
+
+    const sucess = gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS);
+    if(sucess){
+        return fragmentShader;
+    }
+
+    console.log(gl.getShaderInfoLog(fragmentShader));
+    gl.deleteShader(fragmentShader);
 }
 
 function createProgram(gl, vertexShader, fragmentShader) {

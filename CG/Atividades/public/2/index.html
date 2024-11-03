@@ -10,14 +10,18 @@
     <script src="main.js" defer></script>
 </head>
 <body>
-    <h1>Testing 1 2 3... test testing</h1>
-    <h2>Contato</h2>
     <form>
-        <label for="draw">What draw you want?</label>
+        <h3 for="draw">How do you want to draw?</h3>
+        <!-- <button type="button" onclick="drawLineClicking()">4.1 - Draw line clicking and color</button> -->
+        <t>(0-9 for colors)</t>
         <br>
-        <button type="button" onclick="drawCar()">Car</button>     
-        <button type="button" onclick="drawFlower()">Flower</button> 
-        <button type="button" onclick="drawClown()">Clown</button> 
+        <!-- <button type="button" onclick="drawTriangleClicking()">4.2 - Draw triangle clicking</button>  -->
+        <br>    
+        <t>(r = mode for draw Lines, t = mode for draw Triangle)</t>
+        <br>
+        <br>
+        <!-- <button type="button" onclick="changeThickness()">4.3 - Change thickness</button>  -->
+        <t> (e = mode for change Thickness, k = mode to change Colors) after press (0-9) to change</t>
     </form> 
     <canvas id="c" width="300" height="300"></canvas>
 </body>

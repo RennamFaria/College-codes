@@ -6,477 +6,283 @@ function main(draw) {
         throw new Error('WebGL not supported');
     }
 
-    canvas.addEventListener("mousedown", mouseDown, false);
+    let startPoint = null;
+    let startPoints = [];
 
-    function mouseDown(event) {
-        const x = event.offsetX;
-        const y = event.offsetY;
-    
-        const normalizedX = (x / canvas.width) * 2 - 1;
-        const normalizedY = -((y / canvas.height) * 2 - 1); // Flip Y for WebGL
-    
-        console.log("Normalized X:", normalizedX);
-        console.log("Normalized Y:", normalizedY);
-    }
+    let modeDraw = 'r';             // Mode for drawing lines or triangles
+    let modeLineCharacter = 'k';    // Mode for changing color or thickness
+    let size = 5.0;
 
-    var vertexShader = createVertexShader(gl);
-    var fragmentShader = createFragmentShader(gl);
-    
-    var program = createProgram(gl, vertexShader, fragmentShader);
+    const vertexShaderSource = `
+        attribute vec2 position;
+        uniform mat4 matrix;
+        uniform float size;
 
+        void main() {
+            gl_Position = matrix * vec4(position, 0, 1);
+            gl_PointSize = size; // Use uniform size for point size
+        }
+    `;
+
+    const fragmentShaderSource = `
+        precision mediump float;
+        uniform vec3 vColor;
+
+        void main() {
+            gl_FragColor = vec4(vColor, 1.0);
+        }
+    `;
+
+    // Load shaders
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = createProgram(gl, vertexShader, fragmentShader);
     gl.useProgram(program);
 
     const positionBuffer = gl.createBuffer();
-    const colorBuffer = gl.createBuffer();
-
-    const positionLocation = gl.getAttribLocation(program, `position`);
+    const positionLocation = gl.getAttribLocation(program, 'position');
     gl.enableVertexAttribArray(positionLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    const colorLocation = gl.getAttribLocation(program, `color`);
-    gl.enableVertexAttribArray(colorLocation);
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
-
-    gl.clearColor(0.0, 0.0, 0.0, 0.0); // Makes the WebGL background transparent
+    gl.clearColor(0.0, 0.0, 0.0, 0.0); // Transparent background
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    n = 30;
-    const grey = normalizeRGB(33,33,33);
-    const greyLight = normalizeRGB(175,178,183);
-    const cian = normalizeRGB(5,190,186);
-    const orange = normalizeRGB(235,64,17)
-    const yellow = normalizeRGB(254,241,180);
-    const white = normalizeRGB(255,255,255);
-    const black = normalizeRGB(0,0,0);
-    const pink = normalizeRGB(255,167,205);
-    const red = normalizeRGB(255,0,0);
+    // Set thickness of line
+    const matrixUniformLocation = gl.getUniformLocation(program, 'matrix');
+    const colorUniformLocation = gl.getUniformLocation(program, 'vColor');
+    const sizeLocation = gl.getUniformLocation(program, 'size');
+    gl.uniform1f(sizeLocation, size);
 
-    switch(draw){
-        case 1:         //drawCar
-            //body
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.7, -0.3, 1.4, 0.35);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...cian]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    const matrix = [
+        2 / canvas.width, 0, 0, 0,
+        0, -2 / canvas.height, 0, 0,
+        0, 0, 0, 0,
+        -1, 1, 0, 1
+    ];
+    gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.4, 0.0, 0.5, 0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...cian]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    let positionVector = [canvas.width / 2, canvas.height / 2];
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionVector), gl.STATIC_DRAW);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);     //line botton
-            setRectangleVertices(gl, -0.7, -0.3, 1.4, 0.02);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    let colorVector = [0.0, 0.0, 0.0];
+    gl.uniform3fv(colorUniformLocation, colorVector);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.7, -0.12, 1.4, 0.02);   //line middle
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...grey]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    canvas.addEventListener("mousedown", mouseClick, false);
 
-            //light front
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.72, -0.1, 0.12, 0.08);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.72, -0.08, 0.1, 0.05);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    function mouseClick(event) {
+        const x = event.offsetX;
+        const y = event.offsetY;
 
-            //light back
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, 0.62, -0.1, 0.1, 0.08);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, 0.64, -0.08, 0.08, 0.05);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        if (modeDraw === 'r') {
+            if (!startPoint) {
+                startPoint = [x, y]; // First points
+            } else {
+                drawLine(startPoint[0], startPoint[1], x, y);
+                startPoint = null; // Reset
+            }
+        }
+        else if (modeDraw === 't') {
+            startPoints.push([x, y]); // Save first, second and third point
+    
+            if (startPoints.length === 3) { // draw triangle
+                drawTriangle(startPoints);
+                startPoints = [];           // Reset
+            }
+        } 
+    }
 
-            //window
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.36, 0.04, 0.42, 0.22);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...grey]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    function drawTriangle(points) {
+        const vertices = new Float32Array(points.flat());
+    
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 2); // Draws triangle with 3 points
+    }
+    
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.35, 0.05, 0.4, 0.2);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...greyLight]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+    document.body.addEventListener("keydown", keyDown, false);
 
-            //wheels
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.15, -0.4, -0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...grey]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+    function keyDown(event) {
+        console.log("key = " + event.key);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.15, 0.4, -0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...grey]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+        // Handle mode and draw selection
+        switch (event.key) {
+            case 'k':
+                modeLineCharacter = 'k'; // Mode changing color
+                break;
+            case 'e':
+                modeLineCharacter = 'e'; // Mode changing thickness
+                break;
+            case 'r':
+                modeDraw = 'r';         // Mode drawing lines
+                break;
+            case 't':
+                modeDraw = 't';         // Mode drawing triangles
+                break;
+        }
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.12, -0.4, -0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...greyLight]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+        // Update color or thickness
+        switch (modeLineCharacter) {
+            case 'k': // Color mode
+                switch(event.key){
+                    case "0":
+                        colorVector = normalizeRGB(0,0,0);   //black
+                        console.log("black");
+                        break;
+                    case "1":
+                        colorVector = normalizeRGB(147,147,230);   //light blue
+                        console.log("light blue");
+                        break;
+                    case "2":
+                        colorVector = normalizeRGB(39,39,204);   //blue
+                        console.log("blue");
+                        break;
+                    case "3":
+                        colorVector = normalizeRGB(49,184,0);   //green
+                        console.log("green");
+                        break;
+                    case "4":
+                        colorVector = normalizeRGB(252,245,15);   //yellow
+                        console.log("yellow");
+                        break;
+                    case "5":
+                        colorVector = normalizeRGB(255,8,8);   //red
+                        console.log("red");
+                        break;
+                    case "6":
+                        colorVector = normalizeRGB(132,59,163);   //magenta
+                        console.log("magenta");
+                        break;
+                    case "7":
+                        colorVector = normalizeRGB(249,119,148);   //pink
+                        console.log("pink");
+                        break;
+                    case "8":
+                        colorVector = normalizeRGB(255,99,8);   //orange
+                        console.log("orange");
+                        break;
+                    case "9":
+                        colorVector = normalizeRGB(172,175,179);   //light grey
+                        console.log("light grey");
+                        break;
+                    default:
+                        console.log("Invalid color key!");
+                        break;
+                }
+                if (colorVector) {
+                    gl.uniform3fv(colorUniformLocation, colorVector);
+                }
+                break;
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.12, 0.4, -0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...greyLight]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+            case 'e': // Thickness mode
+                switch (event.key) {
+                    case '1':
+                        size = 1.0;
+                        break;
+                    case '2':
+                        size = 2.0;
+                        break;
+                    case '3':
+                        size = 3.0;
+                        break;
+                    case '4':
+                        size = 4.0;
+                        break;
+                    case '5':
+                        size = 5.0;
+                        break;
+                    case '6':
+                        size = 6.0;
+                        break;
+                    case '7':
+                        size = 7.0;
+                        break;
+                    case '8':
+                        size = 8.0;
+                        break;
+                    case '9':
+                        size = 9.0;
+                        break;
+                    default:
+                        size = null;
+                }
+                if (size) {
+                    gl.uniform1f(sizeLocation, size);
+                    console.log("thickness = ", size);
+                }
+                break;
+        }
+    }
 
-            break;
+    function drawLine(x0, y0, x1, y1) {
+        const points = bresenham(x0, y0, x1, y1);
+        const vertices = new Float32Array(points.flat());
 
-        case 2:         //drawFlower
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-            //contorn
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.32, 0.0, 0.45);      
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.32, 0.4, 0.15);       
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.32, -0.4, 0.15);       
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.32, 0.26, -0.35);       
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.32, -0.26, -0.35);       
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, vertices.length / 2);
+    }
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.3, 0.0, 0.45);       //up petal
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
+    function bresenham(x0, y0, x1, y1) {
+        const points = [];
+        const dx = Math.abs(x1 - x0);
+        const dy = Math.abs(y1 - y0);
+        const sx = x0 < x1 ? 1 : -1;
+        const sy = y0 < y1 ? 1 : -1;
+        let err = dx - dy;
 
-        
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.3, 0.4, 0.15);        //right up petal
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-        
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.3, -0.4, 0.15);        //left up petal
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-        
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.3, 0.26, -0.35);        //right down petal
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-        
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.3, -0.26, -0.35);        //left down petal
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.47, 0.0, 0.0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);        //middle contorn
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.45, 0.0, 0.0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);        //middle
-            setCircleColor(gl, n, [...yellow]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            break;
-
-        case 3:         //drawClown
-            //left hair
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, -0.23, 0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, -0.36, 0.14);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, -0.40, 0.30);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            //right hair
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, 0.23, 0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, 0.36, 0.14);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); 
-            setCircleVertices(gl, n, 0.17, 0.40, 0.30);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...orange]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-            // Face
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.4, 0.0, 0.0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...pink]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            // Eyes
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.07, -0.15, 0.15); // Left
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...white]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.07, 0.15, 0.15); // Right
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...white]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            // Pupils
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.03, -0.15, 0.15); // Left
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.03, 0.15, 0.15); // Right
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            // Nose
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setCircleVertices(gl, n, 0.1, 0.0, 0.05);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...red]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            // Mouth
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setArcVertices(gl, n, 0.25, 0.0, -0.1, -(Math.PI * 0.0), -(Math.PI * 1));
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...red]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setArcVertices(gl, n, 0.18, 0.0, -0.13, -(Math.PI * 0.0), -(Math.PI * 1));
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setCircleColor(gl, n, [...white]);
-            gl.drawArrays(gl.TRIANGLES, 0, 3 * n);
-
-            // Hat
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.25, 0.35, 0.5, 0.05);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...black]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            setRectangleVertices(gl, -0.2, 0.4, 0.4, 0.3);
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            setRectangleColor(gl, [...cian]);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
- 
-            break;
+        while (true) {
+            points.push([x0, y0]);
+            if (x0 === x1 && y0 === y1) break;
+            const err2 = err * 2;
+            if (err2 > -dy) {
+                err -= dy;
+                x0 += sx;
+            }
+            if (err2 < dx) {
+                err += dx;
+                y0 += sy;
+            }
+        }
+        return points;
     }
 }
 
-function createVertexShader(gl) {
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER);     // create vertex shader
-    gl.shaderSource(vertexShader, `
-    attribute vec2 position;
-    attribute vec3 color;
-    varying vec3 vColor;
+function createShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
 
-    void main() {
-        gl_Position = vec4(position,0.0,1.0);
-        vColor = color;
-    }
-    `);
-    gl.compileShader(vertexShader);
-
-    const sucess = gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS);
-    if(sucess){
-        return vertexShader;
+    if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        return shader;
     }
 
-    console.log(gl.getShaderInfoLog(vertexShader));
-    gl.deleteShader(vertexShader);
-}
-
-function createFragmentShader(gl) {
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER); // create fragment shader
-    gl.shaderSource(fragmentShader, `
-    precision mediump float;
-
-    varying vec3 vColor;        
-
-    void main() {
-        gl_FragColor = vec4(vColor,1.0);
-    }
-    `);
-    gl.compileShader(fragmentShader);
-
-    const sucess = gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS);
-    if(sucess){
-        return fragmentShader;
-    }
-
-    console.log(gl.getShaderInfoLog(fragmentShader));
-    gl.deleteShader(fragmentShader);
+    console.error(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
 }
 
 function createProgram(gl, vertexShader, fragmentShader) {
-    var program = gl.createProgram();
+    const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
 
-    const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
+    if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
         return program;
     }
 
-    console.log(gl.getProgramInfoLog(program));
+    console.error(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
 }
 
-function setRectangleVertices(gl, x, y, width, height) {
-    var x1 = x;
-    var x2 = x + width;
-    var y1 = y;
-    var y2 = y + height;
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-        x1, y1,
-        x2, y1,
-        x1, y2,
-        x1, y2,
-        x2, y1,
-        x2, y2,
-    ]), gl.STATIC_DRAW);
+function normalizeRGB(red, green, blue) {
+    return [red / 255, green / 255, blue / 255];
 }
 
-function setRectangleColor(gl, color) {
-    colorData = [];
-    for (let triangle = 0; triangle < 2; triangle++) {
-        for (let vertex = 0; vertex < 3; vertex++)
-            colorData.push(...color);
-    }
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
-}
-
-function setCircleVertices(gl, n, radius, x, y) {
-    let center = [x, y];
-    console.log(center);
-    let vertexData = [];
-    for (let i = 0; i < n; i++) {
-        vertexData.push(...center);
-        vertexData.push(x + radius * Math.cos(i * (2 * Math.PI) / n), y + radius * Math.sin(i * (2 * Math.PI) / n));
-        vertexData.push(x + radius * Math.cos((i + 1) * (2 * Math.PI) / n), y + radius * Math.sin((i + 1) * (2 * Math.PI) / n));
-    }
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
-}
-
-function setCircleColor(gl, n, color) {
-    colorData = [];
-    for (let triangle = 0; triangle < n; triangle++) {
-        for (let vertex = 0; vertex < 3; vertex++)
-            colorData.push(...color);
-    }
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
-}
-
-function setArcVertices(gl, n, radius, centerX, centerY, startAngle, endAngle) {
-    const angleStep = (endAngle - startAngle) / n;
-    const vertices = [];
-
-    for (let i = 0; i < n; i++) {
-        const angle1 = startAngle + i * angleStep;
-        const angle2 = startAngle + (i + 1) * angleStep;
-
-        // Center of the arc
-        vertices.push(centerX, centerY);
-        
-        // First point on arc
-        vertices.push(centerX + radius * Math.cos(angle1), centerY + radius * Math.sin(angle1));
-        
-        // Second point on arc
-        vertices.push(centerX + radius * Math.cos(angle2), centerY + radius * Math.sin(angle2));
-    }
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-}
-
-
-function normalizeRGB(red, green, blue){
-    return [(red/255), (green/255), (blue/255)];
-}
-
-function drawCar() {
-    console.log('Drawing car');
-    main(1);
-}
-
-function drawFlower() {
-    console.log('Drawing flower');
-    main(2);
-}
-
-function drawClown() {
-    console.log('Drawing clown');
-  main(3);
-}
+main();
