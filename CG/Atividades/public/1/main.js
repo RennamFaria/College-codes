@@ -38,8 +38,8 @@ function main(draw) {
         console.log("Normalized Y:", y);
     }
 
-    var vertexShader = createShader(gl, vertexShaderSource);
-    var fragmentShader = createShader(gl, fragmentShaderSource);
+    var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     
     var program = createProgram(gl, vertexShader, fragmentShader);
 
@@ -369,8 +369,8 @@ function main(draw) {
     }
 }
 
-function createShader(gl, source) {
-    var shader = gl.createShader(gl.FRAGMENT_SHADER); // create fragment shader
+function createShader(gl, type, source) {
+    var shader = gl.createShader(gl.FRAGMENT_SHADER); // create shader in specificy type
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
