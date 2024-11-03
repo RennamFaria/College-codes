@@ -195,8 +195,8 @@ function animate() {
     mat4.multiply(mvMatrix, viewMatrix, modelMatrix);
     mat4.multiply(mvpMatrix, projectionMatrix, mvMatrix);
 
-    // mat4.rotateZ(modelMatrix, modelMatrix, (Math.PI/2 /100) * rotationSpeed);
-    // mat4.rotateX(modelMatrix, modelMatrix, (Math.PI/2 /150) * rotationSpeed);
+    mat4.rotateZ(modelMatrix, modelMatrix, (Math.PI/2 /100) * rotationSpeed);
+    mat4.rotateX(modelMatrix, modelMatrix, (Math.PI/2 /150) * rotationSpeed);
 
     gl.uniformMatrix4fv(uniformLocations.matrix, false, mvpMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
