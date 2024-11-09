@@ -1,0 +1,56 @@
+body {
+    margin: 0;
+}
+
+.tip-box {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f5f5f5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.tip-box-text {
+    font-size: 12px;
+}
+
+.tip-box h2 {
+    margin: 0 0 10px 0;
+}
+
+.tip-box p {
+    margin: 0;
+}
+
+section.pontuation {
+    text-align: center;
+    padding: 0 10px;
+}
+
+.player1 {
+    padding-right: 75px;
+}
+
+.player2 {
+    padding-left: 75px;
+}
+
+#score1 {
+    padding-right: 115px;
+}
+
+#score2 {
+    padding-left: 115px;
+}
+
+main {
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid black;
+    width: 500px;
+    height: 500px;
+}
