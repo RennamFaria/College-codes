@@ -302,6 +302,11 @@ function main(){
 	let negative;
 	let ball_speed = [ , ];
 
+	// paddle left
+	let paddle1_y= 250;
+	let move = 5;
+	let direction = 1;
+
 	// reset the ball to the original configuration
 	presetBall();
 	function presetBall (){
@@ -335,39 +340,52 @@ function main(){
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		// paddle to mouse position
-		let paddle_y = mouse_location[1];
+		let paddle2_y = mouse_location[1];
 		// clamp position
-		if(paddle_y > 455) paddle_y = 455;
-		if(paddle_y <  45) paddle_y =  45;
+		if(paddle2_y > 455) paddle2_y = 455;
+		if(paddle2_y <  45) paddle2_y =  45;
+
+		// paddle moves automatically
+		if(ball_pos[1]>paddle1_y+45 && paddle1_y < 455) direction = 1;
+		if(ball_pos[1]>paddle1_y+45 && paddle1_y > 455) direction = 0;
+		if(ball_pos[1]<paddle1_y-45 && paddle1_y >  45) direction = -1;
+		if(ball_pos[1]<paddle1_y-45 && paddle1_y <  45) direction = 0;
+		if(ball_pos[1]<paddle1_y+45 && ball_pos[1]>paddle1_y-45) direction = 0;
+		paddle1_y += (move * direction);
 
 		// integrate ball position
 		ball_pos[0] += ball_speed[0] * delta;
 		ball_pos[1] += ball_speed[1] * delta;
 
-		// collision detection
+		// collision with the paddle detection
 		// is ball in horizontal distance to paddle?
-		if((460 < ball_pos[0] && ball_pos[0] < 471) || 0 < ball_pos[0] && ball_pos[0] < 40)
+		if(460 < ball_pos[0] && ball_pos[0] < 471)
 		{
 			// vertical distance from paddle center
-			let dist = ball_pos[1] - paddle_y;
+			let dist = ball_pos[1] - paddle2_y;
 			//is ball in vertical distance from paddle?
 			if(-45 < dist && dist < 45)
 			{
-				// collision!
-				ball_speed[0] = -ball_speed[0];
-				if (ball_speed[0] > 0) {
-					ball_speed[0] += delta/1000
-				}
-				if (ball_speed[0] < 0) {
-					ball_speed[0] -= delta/1000
-				}
-
-				// push ball outside of the paddle
-
+				// collision with the paddle right!
+				collisionPaddle();
 			}
 		}
+
+		if(0 < ball_pos[0] && ball_pos[0] < 40)
+			{
+				// vertical distance from paddle center
+				let dist = ball_pos[1] - paddle1_y;
+				//is ball in vertical distance from paddle?
+				if(-45 < dist && dist < 45)
+				{
+					// collision with the paddle left!
+					collisionPaddle();
+				}
+		}
+
+		//vertical collision
 		if (ball_pos[1] > 490 || ball_pos[1] < 10) {
-			ball_speed[1] = -ball_speed[1]
+			collisionVert();
 		}
 
 		// score tracking
@@ -380,11 +398,39 @@ function main(){
 		}
 
 		//drawing
-		drawRectangle(WebGL, mat4Transform([470,paddle_y], [1,1], 0), [10, 90], [.2,.2,.2]); // right paddle
-		drawRectangle(WebGL, mat4Transform([ 30,paddle_y], [1,1], 0), [10, 90], [.2,.2,.2]); // left  paddle
-		drawCircle   (WebGL, mat4Transform( ball_pos       , [1,1], 0), 25, 10,   [.2,.2,.2]); // ball
+		drawRectangle(WebGL, mat4Transform([470,paddle2_y], [1,1], 0), [10, 90], [.2,.2,.2]); // right paddle
+		drawRectangle(WebGL, mat4Transform([ 30,paddle1_y], [1,1], 0), [10, 90], [.2,.2,.2]); // left  paddle
+		drawCircle   (WebGL, mat4Transform( ball_pos      , [1,1], 0), 25, 10,   [.2,.2,.2]); // ball
 
 		requestAnimationFrame(drawFrame);
+	}
+
+	function collisionPaddle(){
+		let direction;
+		ball_speed[0] = -ball_speed[0];
+		if (ball_speed[0] > 0) {
+			direction = 1;
+		}
+		if (ball_speed[0] < 0) {
+			direction = -1;
+		}
+		if(ball_speed[0]<0.6 && ball_speed[0]>-0.6){
+			ball_speed[0] += delta/1000 * direction;
+		}
+		// push ball outside of the paddle
+		ball_pos[0] += 10 * direction;
+	}
+
+	function collisionVert(){
+		let direction;
+		ball_speed[1] = -ball_speed[1];
+		if (ball_speed[1] > 0) {
+			direction = 1;
+		}
+		if (ball_speed[1] < 0) {
+			direction = -1;
+		}
+		ball_pos[1] += 10 * direction;
 	}
 
 	function updatePlayer1Score(points) {
