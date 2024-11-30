@@ -1,4 +1,3 @@
-// %%writefile difusaoSequencial.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -10,9 +9,8 @@
 #define DELTA_T 0.01
 #define DELTA_X 1.0
 
-void diff_eq(double **C, double **C_new) { //diff_eq(double C[N][N], double C_new[N][N]) {
+void diff_eq(double **C, double **C_new) {
     for (int t = 0; t < T; t++) {
-
         // Calculo da equação de difusão para toda a matrix
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
@@ -31,87 +29,89 @@ void diff_eq(double **C, double **C_new) { //diff_eq(double C[N][N], double C_ne
             }
         }
         if ((t % 100) == 0)
-          printf("Iteração %d - diferença média=%g\n", t, difmedio / ((N - 2) * (N - 2)));
+            printf("Iteração %d - diferença média=%g\n", t, difmedio / ((N - 2) * (N - 2)));
     }
 }
 
 int main() {
-    clock_t start_time, elapsed_time;
-
     // ------- Concentração Inicial -------
     // Cria a matriz C de tamanho N
     double **C = (double **)malloc(N * sizeof(double *));
-
-    // Verifica se a matriz foi criada corretamente
-    if (C == NULL) {     
-      fprintf(stderr, "Falha na alocação de memória\n");
-      return 1;
-    }
-
-    // Cria o restante da matriz C de tamanho N*N
-    for (int i = 0; i < N; i++) {     
-      C[i] = (double *)malloc(N * sizeof(double));
-      if (C[i] == NULL) {
+    if (C == NULL) {
         fprintf(stderr, "Falha na alocação de memória\n");
         return 1;
-      }
     }
 
-    // Limpa a matriz C
     for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        C[i][j] = 0.;
-      }
+        C[i] = (double *)malloc(N * sizeof(double));
+        if (C[i] == NULL) {
+            fprintf(stderr, "Falha na alocação de memória\n");
+            return 1;
+        }
     }
 
-    // ------- Concentração para a próxima iteração -------
-    // Cria a matriz C_new de tamanho N
+    // Inicializa a matriz C
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            C[i][j] = 0.0;
+        }
+    }
+
     double **C_new = (double **)malloc(N * sizeof(double *));
-
-    // Verifica se a matriz foi criada corretamente
     if (C_new == NULL) {
-      fprintf(stderr, "Falha na alocação de memória\n");
-      return 1;
-    }
-
-    // Cria o restante da matriz C_new de tamanho N*N
-    for (int i = 0; i < N; i++) {
-      C_new[i] = (double *)malloc(N * sizeof(double));
-      if (C_new[i] == NULL) {
         fprintf(stderr, "Falha na alocação de memória\n");
         return 1;
-      }
     }
 
-    // Limpa a matriz C_new
     for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-        C_new[i][j] = 0.;
-      }
+        C_new[i] = (double *)malloc(N * sizeof(double));
+        if (C_new[i] == NULL) {
+            fprintf(stderr, "Falha na alocação de memória\n");
+            return 1;
+        }
     }
 
-    // Inicializa a concentração no centro da matriz C
+    // Inicializa a matriz C_new
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            C_new[i][j] = 0.0;
+        }
+    }
+
+    // Inicializa a concentração no centro
     C[N / 2][N / 2] = 1.0;
 
-    // Começa o tempo do processo da equação
-    start_time = clock();
-
-    // Executa o processo da equação de difusão com as matrizes
+    // Executa o processo da equação de difusão
     diff_eq(C, C_new);
 
-    // Termina o tempo do processo da equação
-    elapsed_time = (clock() - start_time);
-
     // Exibe os resultados
-    printf("Tempo final de processo: %f\n", ((double)elapsed_time)/CLOCKS_PER_SEC);
-    printf("Concentração final no centro: %f\n", C[N / 2][N / 2]);
+    printf("\nConcentração final no centro: %f\n", C[N / 2][N / 2]);
+
+    // // Salva a matrix no arquivo de planilha
+    // FILE *fp = fopen("/content/matriz_sequencial_output.txt", "w");
+
+    // Salvando matrix no aqruivo txt
+    if(fp == NULL) {
+      printf("Erro ao abrir arquivo .csv");
+    }
+    else {
+      for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+          if(C[i][j] >= 0.0001)
+            fprintf(fp, "i:%d j:%d Matriz:%f ", i, j, C[i][j]);
+        }
+        fprintf(fp, "\n");
+      }
+      fclose(fp);
+    }
+
+    // Libera memória alocada
+    for (int i = 0; i < N; i++) {
+        free(C[i]);
+        free(C_new[i]);
+    }
+    free(C);
+    free(C_new);
+
     return 0;
 }
-
-
-// !rm difusaoSequencial.x
-// !gcc difusaoSequencial.c -o difusaoSequencial.x
-// !time ./difusaoSequencial.x
-
-// !more /proc/cpuinfo &> processador.txt
-// !more processador.txt | grep model
