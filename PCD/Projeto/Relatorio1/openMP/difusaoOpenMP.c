@@ -35,6 +35,16 @@ void diff_eq(double **C, double **C_new) {
                 C[i][j] = C_new[i][j];
             }
         }
+
+        // // Checar a quantidade de threads rodando
+        // if (t == 0) {
+        //     #pragma omp parallel
+        //     {
+        //         if (omp_get_thread_num() == 0) {
+        //             printf("Número total de threads sendo usadas: %d\n", omp_get_num_threads());
+        //         }
+        //     }
+        // }
         
         if ((t % 100) == 0)
           printf("Iteração %d - diferença média=%g\n", t, difmedio / ((N - 2) * (N - 2)));
@@ -48,12 +58,12 @@ int main() {
     start_time = omp_get_wtime();
 
     int i, j;
-    // int numb_threads = 1;
+
     // int numb_threads = 2;
+    // int numb_threads = 3;
     int numb_threads = 4;
     // int numb_threads = 6;
     // int numb_threads = 8;
-    // int numb_threads = 10;
 
     // Configuração do número de threads do OpenMP
     omp_set_num_threads(numb_threads);
@@ -122,11 +132,11 @@ int main() {
     printf("\nConcentração final no centro: %f\n", C[N / 2][N / 2]);
 
     // // Salva a matrix no arquivo de planilha
-    //FILE *fp = fopen("/content/matriz_sequencial_output.txt", "w");
+    //FILE *fp = fopen("/content/openMP.txt", "w");
 
     // // Salvando matrix no aqruivo txt
     // if(fp == NULL) {
-    //   printf("Erro ao abrir arquivo .csv\n");
+    //   printf("Erro ao abrir arquivo .txt\n");
     // }
     // else {
     //   for (int i = 0; i < N; i++) {

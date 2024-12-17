@@ -90,20 +90,20 @@ int main() {
     // // Salva a matrix no arquivo de planilha
     // FILE *fp = fopen("/content/matriz_sequencial_output.txt", "w");
 
-    // Salvando matrix no aqruivo txt
-    if(fp == NULL) {
-      printf("Erro ao abrir arquivo .csv");
-    }
-    else {
-      for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-          if(C[i][j] >= 0.0001)
-            fprintf(fp, "i:%d j:%d Matriz:%f ", i, j, C[i][j]);
-        }
-        fprintf(fp, "\n");
-      }
-      fclose(fp);
-    }
+    // // Salvando matrix no aqruivo txt
+    // if(fp == NULL) {
+    //   printf("Erro ao abrir arquivo .csv");
+    // }
+    // else {
+    //   for (int i = 0; i < N; i++) {
+    //     for (int j = 0; j < N; j++) {
+    //       if(C[i][j] >= 0.0001)
+    //         fprintf(fp, "i:%d j:%d Matriz:%f ", i, j, C[i][j]);
+    //     }
+    //     fprintf(fp, "\n");
+    //   }
+    //   fclose(fp);
+    // }
 
     // Libera memória alocada
     for (int i = 0; i < N; i++) {
