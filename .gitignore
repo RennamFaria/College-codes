@@ -1,2 +1,4 @@
 
 *.x
+PCD/Projeto/Relatorio1/sequencial/difusaoSequencial.x
+PCD/Projeto/Relatorio1/openMP/difusaoOpenMP.x
