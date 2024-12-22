@@ -8,3 +8,5 @@ específica
 GregorianCalendar() para obter a data corrente e use
 get(Calendar.DAY_OF_WEEK) para obter o dia da
 semana (de 0 a 6).
+
+• 18.3 Como tratar o caso de estados ou estratégia nula? Escreva um programa que resolve-o
