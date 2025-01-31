@@ -49,7 +49,7 @@ void diff_eq(double **C, double **C_new, int localRows, int localCols, int rowSt
         // Troca de informações horizontais
         if (left != MPI_PROC_NULL || right != MPI_PROC_NULL) {
             for (int i = 0; i < localRows; i++) {
-                send_col[i] = C[i][1];  
+                send_col[i] = C[i][1];
             }
         }
         if (left != MPI_PROC_NULL) {
@@ -92,6 +92,87 @@ void diff_eq(double **C, double **C_new, int localRows, int localCols, int rowSt
             fflush(stdout);
         }
     }
+}
+
+int save_results(double **C, int localRows, int localCols, int rows, int cols, int myId, int numProcs) {
+    double *localData = NULL;
+    double *globalData = NULL;
+    int localSize = (localRows - 2) * (localCols - 2);  // Tamanho sem as bordas
+
+    // Aloca memória para dados globais no processo 0
+    if (myId == 0) {
+        globalData = (double *)malloc(numProcs * localSize * sizeof(double));
+        if (globalData == NULL) {
+            fprintf(stderr, "Failed to allocate global data array\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
+    }
+
+    // Aloca memória para dados locais em todos os processos
+    localData = (double *)malloc(localSize * sizeof(double));
+    if (localData == NULL) {
+        fprintf(stderr, "Failed to allocate local data array\n");
+        if (myId == 0) free(globalData);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+
+    // Copia dados locais para o array linear
+    int idx = 0;
+    for (int i = 1; i < localRows-1; i++) {
+        for (int j = 1; j < localCols-1; j++) {
+            localData[idx++] = C[i][j];
+        }
+    }
+
+    // Coleta todos os dados no processo 0
+    MPI_Gather(localData, localSize, MPI_DOUBLE,
+               globalData, localSize, MPI_DOUBLE,
+               0, MPI_COMM_WORLD);
+
+    // Processo 0 salva os dados no arquivo
+    if (myId == 0) {
+        FILE *fp = fopen("matriz_MPI_output.txt", "w");
+        if (fp == NULL) {
+            printf("Erro ao abrir arquivo.txt\n");
+            free(globalData);
+            free(localData);
+            return 1;
+        }
+
+        for (int p = 0; p < numProcs; p++) {
+            int pRow = p / cols;
+            int pCol = p % cols;
+            int baseI = pRow * (N / rows);
+            int baseJ = pCol * (N / cols);
+            int offset = p * localSize;
+
+            for (int i = 0; i < localRows-2; i++) {
+                for (int j = 0; j < localCols-2; j++) {
+                    double val = globalData[offset + i * (localCols-2) + j];
+                    if (val >= 0.0001) {
+                        fprintf(fp, "i:%d j:%d Matriz:%f\n", 
+                                baseI + i, baseJ + j, val);
+                    }
+                }
+            }
+        }
+        fclose(fp);
+
+        // Imprime a concentração no centro
+        int centerProc = (rows/2) * cols + (cols/2);
+        int centerOffset = centerProc * localSize + ((localRows-2)/2) * (localCols-2) + (localCols-2)/2;
+        printf("\nConcentração final no centro: %.6f\n", globalData[centerOffset]);
+    }
+
+    // Libera memória
+    free(localData);
+    if (myId == 0) {
+        free(globalData);
+    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -145,6 +226,9 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     diff_eq(C, C_new, localRows, localCols, rowStart, colStart, rows, cols);
     MPI_Barrier(MPI_COMM_WORLD);
+
+    // Salva os resultados, separado para uma Função
+    // save_results(C, localRows, localCols, rows, cols, myId, numProcs);
 
     // Libera memória
     for (int i = 0; i < localRows; i++) {
