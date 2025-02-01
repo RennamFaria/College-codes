@@ -159,6 +159,12 @@ int save_results(double **C, int localRows, int localCols, int rows, int cols, i
             }
         }
         fclose(fp);
+
+
+        // Imprime a concentração no centro
+        int centerProc = (rows/2) * cols + (cols/2);
+        int centerOffset = centerProc * localSize + ((localRows-2)/2) * (localCols-2) + (localCols-2)/2;
+        printf("\nConcentração final no centro: %.6f\n", globalData[centerOffset]);
     }
 
     // Libera memória
